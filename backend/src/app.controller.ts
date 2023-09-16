@@ -1,5 +1,6 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Req, Res } from '@nestjs/common';
 import { AppService } from './app.service';
+import { Request, Response } from 'express';
 
 @Controller()
 export class AppController {
@@ -8,5 +9,9 @@ export class AppController {
   @Get()
   getHello(): string {
     return this.appService.getHello();
+  }
+  @Get('favicon')
+  async getFaviconPath(@Req() req:Request,@Res() res:Response){
+    return this.appService.getFaviconPath(req,res);
   }
 }
