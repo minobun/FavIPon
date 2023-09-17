@@ -22,23 +22,41 @@ export class AppService {
     // 国の取得
     const resultCountry = await lastValueFrom(
       this.httpService
-        .get("https://ip-api.com/json/"+getIp)
+        .get("http://ip-api.com/json/"+getIp)
         .pipe(map((response) => response.data)),
     );
+    // 国旗の取得
+    const streamFile = await lastValueFrom(
+      this.httpService
+        .get("https://flagsapi.com/"+resultCountry.countryCode+"/flat/32.png",{
+          responseType: "arraybuffer"
+        })
+        .pipe(map((response) => response.data))
+    );
     // ファイル保存先の作成
-    const imagePath:string = path.join(__dirname,'../upload/',resultCountry.countryCode,'/favicon.png');
+    const imageFolderPath:string = path.join(__dirname,'../upload/',resultCountry.countryCode);
+    const imageFilePath:string = path.join(__dirname,'../upload/',resultCountry.countryCode,"/favicon.png");
+
     // ファイルの保存&ファイルの返却
-    if(!fs.existsSync(imagePath)){
-      fs.writeFile("https://flagsapi.com/"+resultCountry.countryCode+"flat/32.png", imagePath, (err) => {
+    if(!fs.existsSync(imageFilePath)){
+      fs.mkdir(imageFolderPath, {recursive: true}, (err) => {
         if (err) {
-          console.error('Error writing to file:', err);
+          console.error('Error creating to folder:', err);
           return;
         }
-        console.log('File saved successfully.');
-        fs.createReadStream(imagePath).pipe(res);
-      });
+        console.log('Folder created successfully.')
+
+        fs.writeFile(imageFilePath,streamFile, (err) => {
+          if (err) {
+            console.error('Error writing to file:', err);
+            return;
+          }
+          console.log('File saved successfully.');
+          fs.createReadStream(imageFilePath).pipe(res);
+          });
+      })
     } else {
-      fs.createReadStream(imagePath).pipe(res);
+    fs.createReadStream(imageFilePath).pipe(res);
     }
   }
 }
