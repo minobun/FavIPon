@@ -6,11 +6,7 @@ import { Request, Response } from 'express';
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
-  @Get()
-  getHello(): string {
-    return this.appService.getHello();
-  }
-  @Get('favicon')
+  @Get('favicon.ico')
   async getFaviconPath(@Req() req:Request,@Res() res:Response){
     return this.appService.getFaviconPath(req,res);
   }
