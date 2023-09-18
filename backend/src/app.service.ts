@@ -13,7 +13,9 @@ export class AppService {
   constructor(
     private httpService:HttpService,
   ){}
-  
+  getHello(){
+    return "Hello World!";
+  }
   // Faviconの返却メソッド
   async getFaviconPath(req:Request, res:Response){
     // IPアドレスの取得
