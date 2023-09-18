@@ -1,9 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { ConsoleLogger, Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { Request, Response } from 'express';
 import { lastValueFrom, map } from 'rxjs';
 import * as fs from 'fs';
 import * as path from 'path';
+import Jimp from "jimp";
 
 @Injectable()
 export class AppService {
@@ -11,10 +12,7 @@ export class AppService {
   constructor(
     private httpService:HttpService,
   ){}
-  // 初期サンプル
-  getHello(): string {
-    return 'Hello World!';
-  }
+  
   // Faviconの返却メソッド
   async getFaviconPath(req:Request, res:Response){
     // IPアドレスの取得
@@ -36,27 +34,35 @@ export class AppService {
     // ファイル保存先の作成
     const imageFolderPath:string = path.join(__dirname,'../upload/',resultCountry.countryCode);
     const imageFilePath:string = path.join(__dirname,'../upload/',resultCountry.countryCode,"/favicon.png");
+    const imageIconPath:string = path.join(__dirname,'../upload/',resultCountry.countryCode,"/favicon.ico");
 
     // ファイルの保存&ファイルの返却
-    if(!fs.existsSync(imageFilePath)){
+    if(!fs.existsSync(imageIconPath)){
       fs.mkdir(imageFolderPath, {recursive: true}, (err) => {
         if (err) {
           console.error('Error creating to folder:', err);
           return;
         }
         console.log('Folder created successfully.')
-
         fs.writeFile(imageFilePath,streamFile, (err) => {
           if (err) {
             console.error('Error writing to file:', err);
             return;
           }
           console.log('File saved successfully.');
-          fs.createReadStream(imageFilePath).pipe(res);
+          Jimp.read(imageFilePath,(err, icon) => {
+            if (err) {
+              console.error('Error converting image')
+              return;
+            }
+            icon.write(imageIconPath);
+            console.log('Image converted successfully.');
+            fs.createReadStream(imageIconPath).pipe(res);
+            })
           });
       })
     } else {
-    fs.createReadStream(imageFilePath).pipe(res);
+      fs.createReadStream(imageIconPath).pipe(res);
     }
   }
 }
