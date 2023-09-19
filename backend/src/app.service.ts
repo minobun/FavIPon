@@ -40,32 +40,32 @@ export class AppService {
         this.sendFile(res, imageIconPath)
       }
     } catch (error) {
-      console.error('an error occurred:', error);
-      res.status(500).send('An error occurred');
+      console.error('An error occurred:', error);
+      res.status(500).send('an error occurred');
     }
   }
 
   private async getCountryCode(ip:string) {
-    const response = await lastValueFrom(
-      this.httpService
-        .get(`http://ip-api.com/json/${ip}`)
-        .pipe(map((res) => res.data))
-    );
-    return response.countryCode;
+      return await lastValueFrom(
+        this.httpService
+          .get(`http://ip-api.com/json/${ip}`)
+          .pipe(map((res) => res.data.countryCode))
+      );
   }
 
   private async getCountryFlag(resultCountry: any) {
-    return await lastValueFrom(
+      return  await lastValueFrom(
       this.httpService
         .get("https://flagsapi.com/" + resultCountry.countryCode + "/flat/32.png", {
           responseType: "arraybuffer"
         })
         .pipe(map((response) => response.data))
-    );
+      );
+    
   }
 
   private createFolder(folderPath:string) {
-    return new Promise<void>((resolve,reject) => {
+      return new Promise<void>((resolve,reject) => {
       fs.mkdir(folderPath, {recursive:true}, (err) => {
         if (err) {
           console.error('Error creating folder:', err);
@@ -75,11 +75,12 @@ export class AppService {
           resolve();
         }
       });
+    
     });
   }
 
   private saveImageToFile(filePath: string, data: Buffer) {
-    return new Promise<void>((resolve, reject) => {
+      return new Promise<void>((resolve, reject) => {
       fs.writeFile(filePath, data, (err) => {
         if (err) {
           console.error('Error writing to file:', err);
@@ -90,10 +91,11 @@ export class AppService {
         }
       });
     });
+
   }
 
   private convertPngToIcon(imageFilePath: string, iconFilePath: string) {
-    return new Promise<void>((resolve, reject) => {
+      return new Promise<void>((resolve, reject) => {
       Jimp.read(imageFilePath, (err, icon) => {
         if (err) {
           console.error('Error converting image:', err);
@@ -103,12 +105,19 @@ export class AppService {
           console.log('Image converted successfully.');
           resolve();
         }
+        });
       });
-    });
+    
   }
 
   private sendFile(res:Response, filePath:string) {
-    fs.createReadStream(filePath).pipe(res);
+    const stream = fs.createReadStream(filePath);
+    stream.on('error', (error) => {
+      console.error('error:', error)
+      res.statusCode = 500;
+      res.end('an error occurred');
+    });
+    stream.pipe(res);
   }
 }
 
