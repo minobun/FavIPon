@@ -1,11 +1,10 @@
-import { ConsoleLogger, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { Request, Response } from 'express';
-import { catchError, lastValueFrom, map } from 'rxjs';
+import { lastValueFrom, map } from 'rxjs';
 import * as fs from 'fs';
 import * as path from 'path';
 import Jimp from "jimp";
-import { AxiosError } from 'axios';
 
 @Injectable()
 export class AppService {
@@ -13,71 +12,113 @@ export class AppService {
   constructor(
     private httpService:HttpService,
   ){}
-  getHello(){
-    return "Hello World!";
-  }
+  
   // Faviconの返却メソッド
-  async getFaviconPath(req:Request, res:Response){
-    // IPアドレスの取得
-    const getIp:string = typeof req.ip == 'string' ? req.ip : '124.0.0.1';
-    console.log(getIp);
-    // 国の取得
-    const resultCountry = await lastValueFrom(
-      this.httpService
-        .get("http://ip-api.com/json/"+getIp)
-        .pipe(
-          map((response) => response.data),
-          catchError((error:AxiosError) => {
-            console.error('Error getting country:', error.response.data);
-            throw 'An error happened';
-          })
-        ),
-    );
-    // 国旗の取得
-    const streamFile = await lastValueFrom(
-      this.httpService
-        .get("https://flagsapi.com/"+resultCountry.countryCode+"/flat/32.png",{
-          responseType: "arraybuffer"
-        })
-        .pipe(map((response) => response.data),
-        catchError((error:AxiosError) => {
-          console.error('Error getting country:', error.response.data);
-          throw 'An error happened';
-        })
-      ),
-    );
-    // ファイル保存先の作成
-    const imageFolderPath:string = path.join(__dirname,'../upload/',resultCountry.countryCode);
-    const imageFilePath:string = path.join(__dirname,'../upload/',resultCountry.countryCode,"/favicon.png");
-    const imageIconPath:string = path.join(__dirname,'../upload/',resultCountry.countryCode,"/favicon.ico");
+  async getFavicon(req:Request, res:Response){
+    try{
+      // IPアドレスの取得
+      const ip:string = req.ip as string || '124.0.0.1';
+      console.log(ip);
 
-    // ファイルの保存&ファイルの返却
-    if(!fs.existsSync(imageIconPath)){
-      fs.mkdir(imageFolderPath, {recursive: true}, (err) => {
-        if (err) {
-          console.error('Error creating to folder:', err);
-          return;
-        }
-        console.log('Folder created successfully.')
-        fs.writeFile(imageFilePath,streamFile, (err) => {
-          if (err) {
-            console.error('Error writing to file:', err);
-            return;
-          }
-          console.log('File saved successfully.');
-          Jimp.read(imageFilePath,(err, icon) => {
-            if (err) {
-              console.error('Error converting image:', err)
-              return;
-            }
-            icon.write(imageIconPath);
-            console.log('Image converted successfully.');
-            fs.createReadStream(imageIconPath).pipe(res);
-            })
-          });
-      })
-    } else {
-      fs.createReadStream(imageIconPath).pipe(res);
+      // 国の取得
+      const resultCountryCode = await this.getCountryCode(ip);
+
+      // ファイル保存先の作成
+      const imageFolderPath:string = path.join(__dirname,'../upload/',resultCountryCode);
+      const imageFilePath:string = path.join(__dirname,'../upload/',resultCountryCode,"/favicon.png");
+      const imageIconPath:string = path.join(__dirname,'../upload/',resultCountryCode,"/favicon.ico");
+
+      // ファイルの保存&ファイルの返却
+      if(!fs.existsSync(imageIconPath)){
+        // 国旗の取得
+        const streamFile = await this.getCountryFlag(resultCountryCode);
+        await this.createFolder(imageFolderPath);
+        await this.saveImageToFile(imageFilePath, streamFile);
+        await this.convertPngToIcon(imageFilePath, imageIconPath);
+        this.sendFile(res, imageIconPath);
+      } else {
+        this.sendFile(res, imageIconPath)
+      }
+    } catch (error) {
+      console.error('An error occurred:', error);
+      res.status(500).send('an error occurred');
     }
   }
+
+  private async getCountryCode(ip:string) {
+      return await lastValueFrom(
+        this.httpService
+          .get(`http://ip-api.com/json/${ip}`)
+          .pipe(map((res) => res.data.countryCode))
+      );
+  }
+
+  private async getCountryFlag(resultCountry: any) {
+      return  await lastValueFrom(
+      this.httpService
+        .get("https://flagsapi.com/" + resultCountry.countryCode + "/flat/32.png", {
+          responseType: "arraybuffer"
+        })
+        .pipe(map((response) => response.data))
+      );
+    
+  }
+
+  private createFolder(folderPath:string) {
+      return new Promise<void>((resolve,reject) => {
+      fs.mkdir(folderPath, {recursive:true}, (err) => {
+        if (err) {
+          console.error('Error creating folder:', err);
+          reject(err);
+        } else {
+          console.log('Folder created successfully.');
+          resolve();
+        }
+      });
+    
+    });
+  }
+
+  private saveImageToFile(filePath: string, data: Buffer) {
+      return new Promise<void>((resolve, reject) => {
+      fs.writeFile(filePath, data, (err) => {
+        if (err) {
+          console.error('Error writing to file:', err);
+          reject(err);
+        } else {
+          console.log('File saved successfully.');
+          resolve();
+        }
+      });
+    });
+
+  }
+
+  private convertPngToIcon(imageFilePath: string, iconFilePath: string) {
+      return new Promise<void>((resolve, reject) => {
+      Jimp.read(imageFilePath, (err, icon) => {
+        if (err) {
+          console.error('Error converting image:', err);
+          reject(err);
+        } else {
+          icon.write(iconFilePath);
+          console.log('Image converted successfully.');
+          resolve();
+        }
+        });
+      });
+    
+  }
+
+  private sendFile(res:Response, filePath:string) {
+    const stream = fs.createReadStream(filePath);
+    stream.on('error', (error) => {
+      console.error('error:', error)
+      res.statusCode = 500;
+      res.end('an error occurred');
+    });
+    stream.pipe(res);
+  }
 }
+
+
