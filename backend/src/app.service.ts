@@ -46,17 +46,18 @@ export class AppService {
   }
 
   private async getCountryCode(ip:string) {
-      return await lastValueFrom(
+      const response = await lastValueFrom(
         this.httpService
           .get(`http://ip-api.com/json/${ip}`)
-          .pipe(map((res) => res.data.countryCode))
+          .pipe(map((res) => res.data))
       );
+      return response.countryCode;
   }
 
-  private async getCountryFlag(resultCountry: any) {
+  private async getCountryFlag(resultCountryCode: any) {
       return  await lastValueFrom(
       this.httpService
-        .get("https://flagsapi.com/" + resultCountry.countryCode + "/flat/32.png", {
+        .get("https://flagsapi.com/" + resultCountryCode + "/flat/32.png", {
           responseType: "arraybuffer"
         })
         .pipe(map((response) => response.data))
