@@ -9,7 +9,7 @@ import * as path from 'path';
   imports: [
     HttpModule,
     ServeStaticModule.forRoot({
-      rootPath: path.join(__dirname,'/../../','frontend/out')
+      rootPath: path.join(__dirname,'/../../','out')
     })
   ],
   controllers: [AppController],
