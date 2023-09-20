@@ -58,10 +58,10 @@ describe('AppService', () => {
         .mockReturnValueOnce(of(mockFlagResponse));
 
 
-      appService.getFavicon(mockRequest, mockResponse);
+      await appService.getFavicon(mockRequest, mockResponse);
 
       // HTTPレスポンスの呼び出しを確認する。
-      expect(mockResponse).toHaveBeenCalled;
+      expect(await appService.getFavicon).toHaveBeenCalled;
     });
 
   });

@@ -32,6 +32,12 @@ Nestでテストを書く。
 - https://ap-ep.com/nestjs-unittest/
 - Udemy(NestJS: The Complete Developer's Guide)
 
+Jestのテスト
+- https://zenn.dev/rik/articles/178ed17982b13535ad59
+
+RxJSのof
+- https://qiita.com/ryuseikurata/items/45faa9cd8f50a390b10c
+
 AxiosをNestで利用する。
 - https://docs.nestjs.com/techniques/http-module
 - https://qiita.com/FukuharaYohei/items/963b3ff293bf32062aa2
