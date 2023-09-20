@@ -43,9 +43,9 @@ describe('AppController', () => {
   
     // リクエスト時に呼び出されていることを確認する。
     it('calls AppController.getFavicon', async() => {
-      expect(appService.getFavicon).not.toHaveBeenCalled();
-      appController.getFavicon(null,null);
-      expect(appService.getFavicon).toHaveBeenCalled();
+      expect(await appService.getFavicon).not.toHaveBeenCalled();
+      await appController.getFavicon(null,null);
+      expect(await appService.getFavicon).toHaveBeenCalled();
     });
 
     // 正常にリクエストした場合正常にレスポンスが返されることを確認する。
@@ -58,7 +58,7 @@ describe('AppController', () => {
       mockResponse.json = jest.fn();
       mockResponse.status = jest.fn(() => mockResponse);
 
-      appController.getFavicon(mockRequest,mockResponse);
+      await appController.getFavicon(mockRequest,mockResponse);
 
       expect(mockResponse.status).toBeDefined;
     })
