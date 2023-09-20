@@ -21,7 +21,8 @@ export class AppService {
       console.log(ip);
 
       // 国の取得
-      const resultCountryCode = await this.getCountryCode(ip);
+      const resultCountryCode:string = await this.getCountryCode(ip) || 'JP';
+      console.log(resultCountryCode);
 
       // ファイル保存先の作成
       const imageFolderPath:string = path.join(__dirname,'../upload/',resultCountryCode);
