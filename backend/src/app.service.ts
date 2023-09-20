@@ -17,8 +17,9 @@ export class AppService {
   async getFavicon(req:Request, res:Response){
     try{
       // IPアドレスの取得
-      const ip:string = req.ip as string || '124.0.0.1';
-      console.log(ip);
+      const ip:string = req.ips[0] as string || req.ip as string || '124.0.0.1';
+      console.log(req.ips);
+      console.log(req.ip);
 
       // 国の取得
       const resultCountryCode:string = await this.getCountryCode(ip) || 'JP';
